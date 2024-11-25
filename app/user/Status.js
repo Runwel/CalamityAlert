@@ -1,17 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
 import { supabase } from '../src/api/SupabaseApi';
 import { HappeningDetails } from '../src/components/maps/HappeningDetails';
 import { RegionFilter } from '../src/components/maps/RegionFilter';
 import { SearchBar } from '../src/components/maps/SearchBar';
+import { useTheme } from '../src/context/ThemeContext';
+import { responsive } from '../src/utils/responsive';
 
-const MAX_CONTENT_LENGTH = 150;
+const MAX_CONTENT_LENGTH = 100;
 
 export default function StatusScreen() {
+  const { isDarkMode } = useTheme();
   const [happenings, setHappenings] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHappening, setSelectedHappening] = useState(null);
+  
+  const windowWidth = Dimensions.get('window').width;
+  const isTablet = windowWidth >= 768;
+
+  const getCardWidth = () => {
+    const padding = responsive.padding.small;
+    const gap = responsive.padding.small;
+    const columns = isTablet ? 2 : 1;
+    return (windowWidth - (padding * 2) - (gap * (columns - 1))) / columns;
+  };
   
   useEffect(() => {
     fetchHappenings();
@@ -59,72 +72,119 @@ export default function StatusScreen() {
     return (
       <HappeningDetails 
         happening={selectedHappening} 
-        onClose={() => setSelectedHappening(null)} 
+        onClose={() => setSelectedHappening(null)}
+        isDarkMode={isDarkMode}
       />
     );
   }
+
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      { backgroundColor: isDarkMode ? '#1a1a1a' : '#fff' }
+    ]}>
       <View style={styles.filterRow}>
         <View style={styles.searchContainer}>
           <SearchBar 
             value={searchQuery}
             onChangeText={setSearchQuery}
+            isDarkMode={isDarkMode}
           />
         </View>
         <View style={styles.filterContainer}>
           <RegionFilter
             selectedRegion={selectedRegion}
             onSelectRegion={setSelectedRegion}
+            isDarkMode={isDarkMode}
           />
         </View>
       </View>
       <ScrollView style={styles.happeningsList}>
-        {filteredHappenings.map((happening) => (
-          <TouchableOpacity
-            key={happening.id}
-            style={styles.happeningCard}
-            onPress={() => setSelectedHappening(happening)}
-          >
-            <View style={styles.cardContent}>
-              {happening.image && (
-                <View style={styles.imageContainer}>
-                  <Image 
-                    source={{ uri: happening.image }} 
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
+        <View style={[
+          styles.grid,
+          { flexDirection: isTablet ? 'row' : 'column' }
+        ]}>
+          {filteredHappenings.map((happening) => {
+            const formattedDateTime = new Date(happening.created_at).toLocaleString([], {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            
+            return (
+              <TouchableOpacity
+                key={happening.id}
+                style={[
+                  styles.happeningCard,
+                  { 
+                    backgroundColor: isDarkMode ? '#1e293b' : '#fff',
+                    width: getCardWidth(),
+                    borderColor: isDarkMode ? '#334155' : '#e2e8f0',
+                  }
+                ]}
+                onPress={() => setSelectedHappening(happening)}
+              >
+                <View style={[
+                  styles.cardContent,
+                  happening.image ? styles.cardWithImage : styles.cardWithoutImage
+                ]}>
+                  {happening.image && (
+                    <Image 
+                      source={{ uri: happening.image }} 
+                      style={styles.imageAside}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={[
+                    styles.textContent,
+                    { flex: 1 }
+                  ]}>
+                    <Text style={[
+                      styles.regionBadge,
+                      { backgroundColor: isDarkMode ? '#334155' : '#e2e8f0' }
+                    ]}>{happening.region}</Text>
+                    <Text style={[
+                      styles.title,
+                      { color: isDarkMode ? '#e2e8f0' : '#000' }
+                    ]}>{happening.title}</Text>
+                    <Text style={[
+                      styles.date,
+                      { color: isDarkMode ? '#94a3b8' : '#64748b' }
+                    ]}>
+                      {formattedDateTime}
+                    </Text>
+                    <Text 
+                      style={[
+                        styles.preview,
+                        { color: isDarkMode ? '#cbd5e1' : '#475569' }
+                      ]} 
+                      numberOfLines={3}
+                    >
+                      {truncateContent(happening.content)}
+                    </Text>
+                  </View>
                 </View>
-              )}
-              <View style={styles.textContent}>
-                <Text style={styles.regionBadge}>{happening.region}</Text>
-                <Text style={styles.title}>{happening.title}</Text>
-                <Text style={styles.date}>
-                  {new Date(happening.created_at).toLocaleDateString()}
-                </Text>
-                <Text style={styles.preview} numberOfLines={2}>
-                  {truncateContent(happening.content)}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    padding: 10,
-    paddingTop: 50,
+    padding: responsive.padding.small,
   },
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: responsive.padding.small,
+    marginBottom: responsive.padding.small,
   },
   searchContainer: {
     flex: 1,
@@ -135,13 +195,15 @@ const styles = StyleSheet.create({
   happeningsList: {
     flex: 1,
   },
+  grid: {
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
   happeningCard: {
-    backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
+    padding: responsive.padding.small,
+    marginBottom: responsive.padding.small,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -149,43 +211,54 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardContent: {
+    gap: responsive.padding.medium,
+  },
+  cardWithImage: {
     flexDirection: 'row',
-    gap: 15,
   },
-  imageContainer: {
-    width: 200,
-    height: 200,
+  cardWithoutImage: {
+    flexDirection: 'column',
   },
-  image: {
-    width: '100%',
-    height: '100%',
+  imageAside: {
+    width: 120,
+    height: 150,
     borderRadius: 8,
   },
   textContent: {
-    flex: 1,
+    gap: responsive.padding.small,
+  },
+  metaContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  time: {
+    fontSize: responsive.fontSize.small,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
+  textContent: {
+    gap: responsive.padding.small,
   },
   regionBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e2e8f0',
-    paddingHorizontal: 8,
+    paddingHorizontal: responsive.padding.small,
     paddingVertical: 4,
     borderRadius: 12,
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: responsive.fontSize.small,
   },
   title: {
-    fontSize: 18,
+    fontSize: responsive.fontSize.large,
     fontWeight: 'bold',
-    marginBottom: 4,
   },
   date: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 8,
+    fontSize: responsive.fontSize.small,
   },
   preview: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: responsive.fontSize.medium,
     lineHeight: 20,
   },
 });

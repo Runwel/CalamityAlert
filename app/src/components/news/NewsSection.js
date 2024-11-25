@@ -7,44 +7,123 @@ import {
   TouchableOpacity, 
   Modal,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { responsive } from '../../utils/responsive';
 
-export function NewsSection({ posts, loading }) {
+export function NewsSection({ posts, loading, isDarkMode }) {
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const windowWidth = Dimensions.get('window').width;
+  const isTablet = windowWidth >= 768;
+
+  const getCardWidth = () => {
+    const padding = responsive.padding.small;
+    const gap = responsive.padding.small;
+    const columns = isTablet ? 2 : 1;
+    return (windowWidth - (padding * 2) - (gap * (columns - 1))) / columns;
+  };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0066cc" />
+      <View style={[
+        styles.loadingContainer,
+        { backgroundColor: isDarkMode ? '#1a1a1a' : '#fff' }
+      ]}>
+        <ActivityIndicator size="large" color={isDarkMode ? '#60a5fa' : '#0066cc'} />
       </View>
     );
   }
 
+  const renderCard = (post) => {
+    const hasImage = !!post.image;
+    const formattedDateTime = new Date(post.created_at).toLocaleString([], {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    if (!hasImage) {
+      return (
+        <LinearGradient
+          colors={isDarkMode ? ['#1e293b', '#334155'] : ['#f8fafc', '#f1f5f9']}
+          style={[styles.textOnlyCard, { width: getCardWidth() }]}
+        >
+          <View style={styles.cardContent}>     
+            <Text style={[
+              styles.title,
+              { color: isDarkMode ? '#e2e8f0' : '#000' }
+            ]}>{post.title}</Text>
+            <Text style={[
+              styles.meta,
+              { color: isDarkMode ? '#94a3b8' : '#64748b' }
+            ]}>{formattedDateTime}</Text>
+            <Text style={[
+              styles.excerpt,
+              { color: isDarkMode ? '#cbd5e1' : '#475569' }
+            ]} numberOfLines={3}>
+              {post.content}
+            </Text>
+          </View>
+        </LinearGradient>
+      );
+    }
+
+    return (
+      <View style={[
+        styles.card,
+        {
+          backgroundColor: isDarkMode ? '#1e293b' : '#fff',
+          width: getCardWidth(),
+          borderColor: isDarkMode ? '#334155' : '#e2e8f0',
+        }
+      ]}>
+        <View style={styles.cardWithImage}>
+          <Image
+            source={{ uri: post.image }}
+            style={styles.imageAside}
+            resizeMode="cover"
+          />
+          <View style={[styles.textContent]}>
+            <Text style={[
+              styles.title,
+              { color: isDarkMode ? '#e2e8f0' : '#000' }
+            ]}>{post.title}</Text>
+            <Text style={[
+              styles.meta,
+              { color: isDarkMode ? '#94a3b8' : '#64748b' }
+            ]}>{formattedDateTime}</Text>
+            <Text style={[
+              styles.excerpt,
+              { color: isDarkMode ? '#cbd5e1' : '#475569' }
+            ]} numberOfLines={3}>
+              {post.content}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      { backgroundColor: isDarkMode ? '#1a1a1a' : '#fff' }
+    ]}>
       <ScrollView>
-        <View style={styles.grid}>
+        <View style={[
+          styles.grid,
+          { flexDirection: isTablet ? 'row' : 'column' }
+        ]}>
           {posts.map((post) => (
             <TouchableOpacity
               key={post.id}
-              style={styles.card}
               onPress={() => setSelectedArticle(post)}
             >
-              {post.image && (
-                <Image
-                  source={{ uri: post.image }}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-              )}
-              <View style={styles.cardContent}>
-                <Text style={styles.title}>{post.title}</Text>
-                <Text style={styles.meta}>{post.formattedDate}</Text>
-                <Text style={styles.excerpt} numberOfLines={3}>
-                  {post.content}
-                </Text>
-              </View>
+              {renderCard(post)}
             </TouchableOpacity>
           ))}
         </View>
@@ -56,21 +135,37 @@ export function NewsSection({ posts, loading }) {
         onRequestClose={() => setSelectedArticle(null)}
       >
         {selectedArticle && (
-          <View style={styles.modalContainer}>
+          <View style={[
+            styles.modalContainer,
+            { backgroundColor: isDarkMode ? '#1a1a1a' : '#fff' }
+          ]}>
             <ScrollView>
               {selectedArticle.image && (
                 <Image
                   source={{ uri: selectedArticle.image }}
                   style={styles.modalImage}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               )}
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>{selectedArticle.title}</Text>
-                <Text style={styles.modalMeta}>
-                  {selectedArticle.formattedDate}
-                </Text>
-                <Text style={styles.modalText}>{selectedArticle.content}</Text>
+                <Text style={[
+                  styles.modalTitle,
+                  { color: isDarkMode ? '#e2e8f0' : '#000' }
+                ]}>{selectedArticle.title}</Text>
+                <Text style={[
+                  styles.modalMeta,
+                  { color: isDarkMode ? '#94a3b8' : '#666' }
+                ]}>{new Date(selectedArticle.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</Text>
+                <Text style={[
+                  styles.modalText,
+                  { color: isDarkMode ? '#cbd5e1' : '#000' }
+                ]}>{selectedArticle.content}</Text>
               </View>
             </ScrollView>
             <TouchableOpacity
@@ -89,7 +184,7 @@ export function NewsSection({ posts, loading }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    padding: responsive.padding.small,
   },
   loadingContainer: {
     flex: 1,
@@ -97,52 +192,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   grid: {
-    padding: 16,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   card: {
-    marginBottom: 16,
-    backgroundColor: '#fff',
     borderRadius: 8,
+    padding: responsive.padding.small,
+    marginBottom: responsive.padding.small,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
+    overflow: 'hidden',
   },
-  image: {
-    width: '100%',
-    height: 200,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+  textOnlyCard: {
+    borderRadius: 8,
+    padding: responsive.padding.small,
+    marginBottom: responsive.padding.small,
   },
   cardContent: {
-    padding: 16,
+    gap: responsive.padding.small,
+    padding: responsive.padding.small,
+  },
+  cardWithImage: {
+    flexDirection: 'row',
+  },
+  imageAside: {
+    width: 120,
+    height: 120,
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  textContent: {
+    flex: 1,
+    padding: responsive.padding.small,
+    gap: responsive.padding.xsmall || 4,
   },
   title: {
-    fontSize: 18,
+    fontSize: responsive.fontSize.large,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
   meta: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: responsive.fontSize.small,
   },
   excerpt: {
-    fontSize: 14,
-    color: '#444',
+    fontSize: responsive.fontSize.medium,
     lineHeight: 20,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   modalImage: {
-    width: '100%',
-    height: 300,
+    width: '100%', // Fills the modal's width
+    height: undefined, // Allow height to adjust based on aspect ratio
+    aspectRatio: 1, // Set this based on your image's aspect ratio (e.g., 16/9 = 1.78)
   },
   modalContent: {
     padding: 16,
@@ -154,7 +259,6 @@ const styles = StyleSheet.create({
   },
   modalMeta: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 16,
   },
   modalText: {

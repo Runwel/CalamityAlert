@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fff',
     padding: 15,
-    paddingTop: 40,
+    paddingTop: 60,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },

@@ -9,7 +9,7 @@ import SettingsScreen from '../../user/Settings';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabNavigation = () => {
+const BottomNavigation = () => {
   const [isModalVisible, setModalVisible] = useState(false);
 
   const toggleModal = () => {
@@ -141,4 +141,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BottomTabNavigation;
+export default BottomNavigation;

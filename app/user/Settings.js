@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView } from 'react-native';
 import { useTheme } from '../src/context/ThemeContext';
 import { supabase } from '../src/api/SupabaseApi';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Settings() {
   const navigation = useNavigation();
@@ -22,20 +23,22 @@ export default function Settings() {
         return;
       }
       
+      await AsyncStorage.removeItem('userSession');
+      
       console.log('Successfully logged out');
-      navigation.replace('Login');
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
     } catch (error) {
       console.error('Error during logout:', error);
       alert('An unexpected error occurred. Please try again.');
     }
   };
 
-  const SettingItem = ({ title, value, onValueChange, type = 'switch' }: {
-    title: string;
-    value: boolean;
-    onValueChange: (value: boolean) => void;
-    type?: 'switch' | 'button';
-  }) => (
+  const SettingItem = ({ title, value, onValueChange, type = 'switch' }) => (
     <View style={[
       styles.settingOption,
       { backgroundColor: isDarkMode ? '#222' : '#f5f5f5' }
@@ -58,6 +61,7 @@ export default function Settings() {
       )}
     </View>
   );
+
   return (
     <ScrollView 
       style={[
@@ -65,7 +69,60 @@ export default function Settings() {
         { backgroundColor: isDarkMode ? '#333' : '#fff' }
       ]}
     >
-      // ... keep existing code (settings sections)
+      <Text style={[
+        styles.header,
+        { color: isDarkMode ? '#fff' : '#000' }
+      ]}>
+        Settings
+      </Text>
+      
+      <View style={styles.section}>
+        <Text style={[
+          styles.sectionHeader,
+          { color: isDarkMode ? '#fff' : '#000' }
+        ]}>
+          Appearance
+        </Text>
+        <SettingItem
+          title="Dark Mode"
+          value={isDarkMode}
+          onValueChange={toggleDarkMode}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[
+          styles.sectionHeader,
+          { color: isDarkMode ? '#fff' : '#000' }
+        ]}>
+          Notifications
+        </Text>
+        <SettingItem
+          title="Push Notifications"
+          value={notifications}
+          onValueChange={setNotifications}
+        />
+        <SettingItem
+          title="Auto Updates"
+          value={autoUpdate}
+          onValueChange={setAutoUpdate}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[
+          styles.sectionHeader,
+          { color: isDarkMode ? '#fff' : '#000' }
+        ]}>
+          Privacy
+        </Text>
+        <SettingItem
+          title="Location Services"
+          value={locationServices}
+          onValueChange={setLocationServices}
+        />
+      </View>
+
       <TouchableOpacity
         style={[
           styles.logoutButton,
@@ -78,6 +135,7 @@ export default function Settings() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

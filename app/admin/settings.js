@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
-import { supabase } from '../src/api/SupabaseApi'; // Import your Supabase client
-import { useNavigation } from '@react-navigation/native';
+import { supabase } from '../src/api/SupabaseApi';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AdminSettings() {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
@@ -20,8 +21,17 @@ export default function AdminSettings() {
         return;
       }
       
+      // Clear the stored session
+      await AsyncStorage.removeItem('userSession');
+      
       console.log('Admin successfully logged out');
-      navigation.replace('Login');
+      // Reset navigation state and navigate to Login
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
     } catch (error) {
       console.error('Error during admin logout:', error);
       alert('An unexpected error occurred. Please try again.');

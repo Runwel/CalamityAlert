@@ -5,7 +5,7 @@ import WeatherApi from '../src/api/WeatherApi';
 import { supabase } from '../src/api/SupabaseApi'
 import { LinearGradient } from 'expo-linear-gradient';
 import AlertModal from '../src/components/AlertModal';
-
+import { responsive } from '../src/utils/responsive';
 import { WeatherSection } from '../src/components/home/WeatherSection';
 import { AlertsList } from '../src/components/home/AlertList';
 
@@ -86,7 +86,7 @@ export default function Home() {
   if (loading) {
     return (
       <LinearGradient
-        colors={isDarkMode ? ['#1a1a1a', '#2d2d2d'] : ['#f0f9ff', '#e0f2fe']}
+        colors={isDarkMode ? ['#1e293b', '#0f172a'] : ['#f0f9ff', '#e0f2fe']}
         style={styles.container}
       >
         <ActivityIndicator size="large" color={isDarkMode ? '#0EA5E9' : '#0284c7'} />
@@ -96,7 +96,7 @@ export default function Home() {
 
   return (
     <ScrollView 
-      style={[styles.container, { backgroundColor: isDarkMode ? '#1a1a1a' : '#f0f9ff' }]}
+      style={[styles.container, { backgroundColor: isDarkMode ? '#0f172a' : '#f0f9ff' }]}
       contentContainerStyle={styles.contentContainer}
     >
       <WeatherSection weather={{ ...weather, ...forecast }} isDarkMode={isDarkMode} />
@@ -128,6 +128,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    paddingVertical: responsive.scale(15),
   },
 });
